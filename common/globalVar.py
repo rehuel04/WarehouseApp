@@ -1,0 +1,1 @@
+connectionDb = {'user':"postgres",'password':"admin",'host':"localhost",'port':"5433",'database':"rehudb"}

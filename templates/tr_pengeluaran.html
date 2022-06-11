@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %} Sistem {% endblock %}
+
+{% block css %}
+.detail {
+    color: white;
+    height: 30px;
+    border-radius: 3px;
+    background-color: #1CA1C1;
+    font-size:11px!important;
+}
+.detail:hover{
+    transform:scale(1.2);
+    cursor:pointer;             
+}
+{% endblock %}
+
+{% block variabel %}
+
+
+let datapengeluaran = {{ data|tojson|safe }}
+let optiongudang = {{ dataGudang|tojson|safe }}
+let optionsuplier = {{ dataSuplier|tojson|safe }}
+
+
+
+let datapengeluaranView = {
+    id:"datatablepengeluaran",
+    view:"datatable", 
+    autoWidth:true,
+    scroll:"xy",
+    borderless:false,
+    height:400,
+    columns:[
+        { id: "pengeluaranid", header:{ text:"ID", css:"datatablAlignCenter",}, fillspace:false, width:40, css:"datatablAlignCenter" },
+        { id: "nomortransaksipengeluaran", header:{ text:"Nomor Transaksi", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "gudangasalpengeluaran", header:{ text:"Gudang Asal", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "tgllpengeluaran", header:{ text:"Tgl Terima", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "suplierpengeluaran", header:{ text:"Nama Suplier", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "notepengeluaran", header:{ text:"Note", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "detail", header: { text:"Detail", css:"datatablAlignCenter" }, width: 60, css:"datatablAlignCenter1"},
+    ],
+    onClick:{
+        detail: function (e, id, trg) {
+            let tb = $$("datatablepengeluaran").getItem(id);
+            webix.send("/tr_pengeluaran_detail",{'nomortransaksi':tb.pengeluaranid},"POST");
+        },
+    }
+};
+
+let masterpengeluaranButton = {
+    view:"toolbar",
+    borderless:true,
+    elements: [
+        {},
+        {},
+        {},
+        {
+            view:"button",
+            label:"Tambah Data",
+            width:115,
+            css:"webix_primary",
+            hover:"tambahData",
+            click:inputDataShow
+        },
+        {width:10},
+    ]
+}
+
+
+
+let formInputData = {
+    view:"form",
+    id:"forminputdata",
+    elements:[
+        { id: "inputnomorpengeluaran", label: "Nomor Transaksi", name: "inputnomorpengeluaran", view: "text", placeholder: "pengeluaran ID", labelWidth: 130 },
+        { id: "inputgudang", label: "Gudang Asal", name: "inputgudang", view: "select", placeholder: "Kategori", labelWidth: 130, readonly: false, options:optiongudang},
+        { id: "inputsuplier", label: "Suplier", name: "inputsuplier", view: "select", placeholder: "Kategori", labelWidth: 130, readonly: false, options:optionsuplier},
+        { id: "inputpengeluarannote", label: "pengeluaran Note", name: "inputpengeluarannote", view: "textarea", placeholder: "pengeluaran Name (max 150 karakter)", labelWidth: 130, readonly: false,  attributes:{ maxlength:50 } },
+        {
+            margin: 5, cols: [
+                {},
+                { view: "button", id: "inputButton", value: "Simpan", css: "webix_primary",click:buttonSimpanFormInput },
+                {},
+            ]
+        },
+    ],
+    rules:{
+        // "inputnomorpengeluaran":webix.rules.isNotEmpty,
+        // "inputpengeluarannote":webix.rules.isNotEmpty,
+    }
+}
+
+webix.ui({
+    view:"window",
+    id:"inputdatapopup",
+    position:"center,middle",
+    maxWidth:500,
+    minWidth:300,
+    close:true,
+    modal:true,
+    move:true,
+    head:"Input Data Master pengeluaran",
+    body:formInputData,
+});
+{% endblock %}
+
+{% block content %}
+
+{
+    view:"scrollview",
+    scroll:"auto",
+    id:"contentpage",
+    body:{
+        type:"space",
+        rows: [
+            {
+                borderless:true,
+                template: "<h3>Transaksi pengeluaran</h3><br>",
+                height: 60,
+            },
+            {
+                type:"clean",
+                rows:[
+                    {
+                        type:"form",
+                        borderless:true,
+                        rows:[
+                            {height:2},
+                            {cols:[{width:2},datapengeluaranView,{width:2}]},
+                            masterpengeluaranButton,
+                            {autoheight:true},
+                        ] 
+                    }
+                ]
+                
+            },
+            {height:15},
+        ]
+    }
+
+},
+
+
+{% endblock %}
+
+{% block variabelBottom %}
+webix.extend($$("inputdatapopup"), webix.ProgressBar);
+webix.extend($$("contentpage"), webix.ProgressBar);
+
+
+function buttonSimpanFormInput(){
+    if($$("forminputdata").validate()){
+        $$("inputdatapopup").disable();
+        $$("inputdatapopup").showProgress({
+            type:"icon",
+            hide:true
+        });
+        webix.ajax().post("/tr_pengeluaran/input", $$("forminputdata").getValues()).then(function (response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+
+            let json = response.json();
+            if (!json.status){
+                webix.alert({
+                    type:"alert-error",
+                    text:json.msg
+                }).then(function(){
+                    location.reload();
+                });
+            }else if (!json.statusdata){
+                webix.alert({
+                    type:"alert-warning",
+                    text:json.msg
+                });
+            }else{
+                webix.alert({
+                    type:"alert-success",
+                    text:json.msg
+                });
+            }
+            buttonResetFormInput()
+            $$("inputdatapopup").hide();
+            $$("datatablepengeluaran").clearAll();
+            response.json().data.forEach(function (datum) {
+                datum.detail = "<input class='detail' type='button' value=' Detail '>"
+                $$("datatablepengeluaran").add(datum);
+            });
+            datapengeluaran = response.json().data;
+        }).fail(function(response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+        });
+    }else {
+        webix.alert({ 
+            type:"alert-error", 
+            title:"Error",
+            text:"Mohon isi Data Terlebih Dahulu",
+        });
+    }
+}
+
+function buttonResetFormInput(){
+    $$("forminputdata").setValues({
+        inputpengeluaranid: "",
+        inputpengeluaranid: "",
+    });
+}
+
+function inputDataShow(){
+    $$("inputdatapopup").show()
+}
+
+
+datapengeluaran.forEach(function (datum) {
+    console.log(datum)
+    datum.detail = "<input class='detail' type='button' value=' Detail '>"
+    $$("datatablepengeluaran").add(datum);
+});
+
+
+{% endblock %}

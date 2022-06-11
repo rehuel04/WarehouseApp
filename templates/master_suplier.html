@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block title %} Sistem {% endblock %}
+
+{% block css %}
+{% endblock %}
+
+{% block variabel %}
+
+
+let dataSuplier = {{ data|tojson|safe }}
+
+
+
+let dataSuplierView = {
+    id:"datatableSuplier",
+    view:"datatable", 
+    autoWidth:true,
+    scroll:"xy",
+    borderless:false,
+    height:400,
+    columns:[
+        { id: "suplierid", header:{ text:"ID", css:"datatablAlignCenter",}, fillspace:false, width:40, css:"datatablAlignCenter" },
+        { id: "supliername", header:{ text:"Nama Suplier", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "edit", header: { text:"Aksi", colspan:2, css:"datatablAlignCenter" }, width: 60, css:"datatablAlignCenter1"},
+        { id: "hapus", header: " ", width: 100, css:"datatablAlignCenter"},
+    ],
+    onClick:{
+        edit: function (e, id, trg) {
+            let tb = $$("datatableSuplier").getItem(id);
+            buttonEditDataShow(tb)
+        },
+        del: function (e, id, trg) {
+            let tb = $$("datatableSuplier").getItem(id);
+            buttonDeleteData(tb)
+        },
+    }
+};
+
+let masterSuplierButton = {
+    view:"toolbar",
+    borderless:true,
+    elements: [
+        {},
+        {},
+        {},
+        {
+            view:"button",
+            label:"Tambah Data",
+            width:115,
+            css:"webix_primary",
+            hover:"tambahData",
+            click:inputDataShow
+        },
+        {width:10},
+    ]
+}
+
+let formEditData = {
+    view:"form",
+    id:"formeditdata",
+    elements:[
+        { id: "editsuplierid", label: "Suplier ID", name: "editsuplierid", view: "text", placeholder: "Suplier ID", labelWidth: 130, disabled: true, },
+        { id: "editsupliername", label: "Suplier Name", name: "editsupliername", view: "text", placeholder: "Suplier Name (max 50 karakter)", labelWidth: 130, readonly: false,  attributes:{ maxlength:50 } },
+        {
+            margin: 5, cols: [
+                {},
+                { view: "button", id: "editButton", value: "Simpan", css: "webix_primary",click:buttonSimpanFormEdit },
+                {},
+            ]
+        },
+    ],
+    rules:{}
+}
+
+webix.ui({
+    view:"window",
+    id:"editdatapopup",
+    position:"center,middle",
+    maxWidth:500,
+    minWidth:300,
+    close:true,
+    modal:true,
+    move:true,
+    head:"Edit Data Master Suplier",
+    body:formEditData,
+});
+
+
+let formInputData = {
+    view:"form",
+    id:"forminputdata",
+    elements:[
+        { id: "inputsuplierid", label: "Suplier ID", name: "inputsuplierid", view: "text", placeholder: "Suplier ID", labelWidth: 130 },
+        { id: "inputsupliername", label: "Suplier Name", name: "inputsupliername", view: "text", placeholder: "Suplier Name (max 50 karakter)", labelWidth: 130, readonly: false,  attributes:{ maxlength:50 } },
+        {
+            margin: 5, cols: [
+                {},
+                { view: "button", id: "inputButton", value: "Simpan", css: "webix_primary",click:buttonSimpanFormInput },
+                {},
+            ]
+        },
+    ],
+    rules:{
+        "inputsuplierid":webix.rules.isNotEmpty,
+        "inputsupliername":webix.rules.isNotEmpty,
+    }
+}
+
+webix.ui({
+    view:"window",
+    id:"inputdatapopup",
+    position:"center,middle",
+    maxWidth:500,
+    minWidth:300,
+    close:true,
+    modal:true,
+    move:true,
+    head:"Input Data Master Suplier",
+    body:formInputData,
+});
+{% endblock %}
+
+{% block content %}
+
+{
+    view:"scrollview",
+    scroll:"auto",
+    id:"contentpage",
+    body:{
+        type:"space",
+        rows: [
+            {
+                borderless:true,
+                template: "<h3>Suplier</h3><br>",
+                height: 60,
+            },
+            {
+                type:"clean",
+                rows:[
+                    {
+                        type:"form",
+                        borderless:true,
+                        rows:[
+                            {height:2},
+                            {cols:[{width:2},dataSuplierView,{width:2}]},
+                            masterSuplierButton,
+                            {autoheight:true},
+                        ] 
+                    }
+                ]
+                
+            },
+            {height:15},
+        ]
+    }
+
+},
+
+
+{% endblock %}
+
+{% block variabelBottom %}
+webix.extend($$("editdatapopup"), webix.ProgressBar);
+webix.extend($$("inputdatapopup"), webix.ProgressBar);
+webix.extend($$("contentpage"), webix.ProgressBar);
+
+
+function buttonSimpanFormInput(){
+    if($$("forminputdata").validate()){
+        $$("inputdatapopup").disable();
+        $$("inputdatapopup").showProgress({
+            type:"icon",
+            hide:true
+        });
+        webix.ajax().post("/master_suplier/input", $$("forminputdata").getValues()).then(function (response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+
+            let json = response.json();
+            if (!json.status){
+                webix.alert({
+                    type:"alert-error",
+                    text:json.msg
+                }).then(function(){
+                    location.reload();
+                });
+            }else if (!json.statusdata){
+                webix.alert({
+                    type:"alert-warning",
+                    text:json.msg
+                });
+            }else{
+                webix.alert({
+                    type:"alert-success",
+                    text:json.msg
+                });
+            }
+            buttonResetFormInput()
+            $$("inputdatapopup").hide();
+            $$("datatableSuplier").clearAll();
+            response.json().data.forEach(function (datum) {
+                datum.edit = "<input class='edit' type='button' value=' Edit '>"
+                datum.hapus = "<input class='del' type='button' value=' Delete '>"
+                $$("datatableSuplier").add(datum);
+            });
+            dataSuplier = response.json().data;
+        }).fail(function(response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+        });
+    }else {
+        webix.alert({ 
+            type:"alert-error", 
+            title:"Error",
+            text:"Mohon isi Data Terlebih Dahulu",
+        });
+    }
+}
+
+function buttonResetFormInput(){
+    $$("forminputdata").setValues({
+        inputsuplierid: "",
+        inputsuplierid: "",
+    });
+}
+
+function inputDataShow(){
+    $$("inputdatapopup").show()
+}
+
+function buttonSimpanFormEdit(){
+    if($$("formeditdata").validate()){
+        webix.confirm({
+        title:"Edit Data",
+        ok:"Ya", cancel:"Tidak",
+        text:"Apakah anda yakin ingin mengupdate data?"
+        }).then(function(){
+            $$("editdatapopup").disable();
+            $$("editdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+            webix.ajax().post("/master_suplier/edit", $$("formeditdata").getValues()).then(function (response){
+                $$("editdatapopup").enable();
+                $$("editdatapopup").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+
+                let json = response.json();
+                if (!json.status){
+                    webix.alert({
+                        type:"alert-error",
+                        text:json.msg
+                    }).then(function(){
+                        location.reload();
+                    });
+                }else{
+                    webix.alert({
+                        type:"alert-success",
+                        text:json.msg
+                    });
+                }
+                $$("editdatapopup").hide();
+                $$("datatableSuplier").clearAll();
+                response.json().data.forEach(function (datum) {
+                    datum.edit = "<input class='edit' type='button' value=' Edit '>"
+                    datum.hapus = "<input class='del' type='button' value=' Delete '>"
+                    $$("datatableSuplier").add(datum);
+                });
+                dataSuplier = response.json().data;
+            }).fail(function(response){
+                $$("editdatapopup").enable();
+                $$("editdatapopup").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+            });
+        });
+    }else {
+        webix.alert({ 
+            type:"alert-error", 
+            title:"Error",
+            text:"Mohon isi Data Terlebih Dahulu",
+        });
+    }
+}
+
+function buttonEditDataShow(data){
+    $$("editsuplierid").setValue(data.suplierid);
+    $$("editsupliername").setValue(data.supliername);
+    $$("editdatapopup").show();
+};
+
+function buttonDeleteData(data){
+    webix.confirm({
+        itle:"Delete Data",
+        ok:"Ya", cancel:"Tidak",
+        text:"Apakah anda yakin menghapus data suplier "+data.supliername+" ?",
+        type: "confirm-error"
+        }).then(function(){
+            $$("contentpage").disable();
+            $$("contentpage").showProgress({
+                type:"icon",
+                hide:true
+            });
+            webix.ajax().post("/master_suplier/delete", {suplierid:data.suplierid}).then(function (response){
+                $$("contentpage").enable();
+                $$("contentpage").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+
+                let json = response.json();
+                if (!json.status){
+                    webix.alert({
+                        type:"alert-error",
+                        text:json.msg
+                    }).then(function(){
+                        location.reload();
+                    });
+                }else if (!json.statusdata){
+                    webix.alert({
+                        type:"alert-warning",
+                        text:json.msg
+                    });
+                }else{
+                    webix.alert({
+                        type:"alert-success",
+                        text:json.msg
+                    });
+                }
+                $$("datatableSuplier").clearAll();
+                response.json().data.forEach(function (datum) {
+                    datum.edit = "<input class='edit' type='button' value=' Edit '>"
+                    datum.hapus = "<input class='del' type='button' value=' Delete '>"
+                    $$("datatableSuplier").add(datum);
+                });
+                dataSuplier = response.json().data;
+            }).fail(function(response){
+                $$("contentpage").enable();
+                $$("contentpage").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+            });
+        });
+}
+
+dataSuplier.forEach(function (datum) {
+    console.log(datum)
+    datum.edit = "<input class='edit' type='button' value=' Edit '>"
+    datum.hapus = "<input class='del' type='button' value=' Delete '>"
+    $$("datatableSuplier").add(datum);
+});
+
+
+{% endblock %}

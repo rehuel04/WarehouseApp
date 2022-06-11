@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+
+{% block title %} Sistem {% endblock %}
+
+{% block css %}
+{% endblock %}
+
+{% block variabel %}
+
+
+let datawarehouse = {{ data|tojson|safe }}
+
+
+
+let datawarehouseView = {
+    id:"datatablewarehouse",
+    view:"datatable", 
+    autoWidth:true,
+    scroll:"xy",
+    borderless:false,
+    height:400,
+    columns:[
+        { id: "warehouseid", header:{ text:"ID", css:"datatablAlignCenter",}, fillspace:false, width:40, css:"datatablAlignCenter" },
+        { id: "warehousename", header:{ text:"Nama", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "edit", header: { text:"Aksi", colspan:2, css:"datatablAlignCenter" }, width: 60, css:"datatablAlignCenter1"},
+        { id: "hapus", header: " ", width: 100, css:"datatablAlignCenter"},
+    ],
+    onClick:{
+        edit: function (e, id, trg) {
+            let tb = $$("datatablewarehouse").getItem(id);
+            buttonEditDataShow(tb)
+        },
+        del: function (e, id, trg) {
+            let tb = $$("datatablewarehouse").getItem(id);
+            buttonDeleteData(tb)
+        },
+    }
+};
+
+let masterwarehouseButton = {
+    view:"toolbar",
+    borderless:true,
+    elements: [
+        {},
+        {},
+        {},
+        {
+            view:"button",
+            label:"Tambah Data",
+            width:115,
+            css:"webix_primary",
+            hover:"tambahData",
+            click:inputDataShow
+        },
+        {width:10},
+    ]
+}
+
+let formEditData = {
+    view:"form",
+    id:"formeditdata",
+    elements:[
+        { id: "editwarehouseid", label: "warehouse ID", name: "editwarehouseid", view: "text", placeholder: "warehouse ID", labelWidth: 130, disabled: true, },
+        { id: "editwarehousename", label: "warehouse Name", name: "editwarehousename", view: "text", placeholder: "warehouse Name (max 50 karakter)", labelWidth: 130, readonly: false,  attributes:{ maxlength:50 } },
+        {
+            margin: 5, cols: [
+                {},
+                { view: "button", id: "editButton", value: "Simpan", css: "webix_primary",click:buttonSimpanFormEdit },
+                {},
+            ]
+        },
+    ],
+    rules:{}
+}
+
+webix.ui({
+    view:"window",
+    id:"editdatapopup",
+    position:"center,middle",
+    maxWidth:500,
+    minWidth:300,
+    close:true,
+    modal:true,
+    move:true,
+    head:"Edit Data Master warehouse",
+    body:formEditData,
+});
+
+
+let formInputData = {
+    view:"form",
+    id:"forminputdata",
+    elements:[
+        { id: "inputwarehouseid", label: "warehouse ID", name: "inputwarehouseid", view: "text", placeholder: "warehouse ID", labelWidth: 130 },
+        { id: "inputwarehousename", label: "warehouse Name", name: "inputwarehousename", view: "text", placeholder: "warehouse Name (max 50 karakter)", labelWidth: 130, readonly: false,  attributes:{ maxlength:50 } },
+        {
+            margin: 5, cols: [
+                {},
+                { view: "button", id: "inputButton", value: "Simpan", css: "webix_primary",click:buttonSimpanFormInput },
+                {},
+            ]
+        },
+    ],
+    rules:{
+        "inputwarehouseid":webix.rules.isNotEmpty,
+        "inputwarehousename":webix.rules.isNotEmpty,
+    }
+}
+
+webix.ui({
+    view:"window",
+    id:"inputdatapopup",
+    position:"center,middle",
+    maxWidth:500,
+    minWidth:300,
+    close:true,
+    modal:true,
+    move:true,
+    head:"Input Data Master warehouse",
+    body:formInputData,
+});
+{% endblock %}
+
+{% block content %}
+
+{
+    view:"scrollview",
+    scroll:"auto",
+    id:"contentpage",
+    body:{
+        type:"space",
+        rows: [
+            {
+                borderless:true,
+                template: "<h3>warehouse</h3><br>",
+                height: 60,
+            },
+            {
+                type:"clean",
+                rows:[
+                    {
+                        type:"form",
+                        borderless:true,
+                        rows:[
+                            {height:2},
+                            {cols:[{width:2},datawarehouseView,{width:2}]},
+                            masterwarehouseButton,
+                            {autoheight:true},
+                        ] 
+                    }
+                ]
+                
+            },
+            {height:15},
+        ]
+    }
+
+},
+
+
+{% endblock %}
+
+{% block variabelBottom %}
+webix.extend($$("editdatapopup"), webix.ProgressBar);
+webix.extend($$("inputdatapopup"), webix.ProgressBar);
+webix.extend($$("contentpage"), webix.ProgressBar);
+
+
+function buttonSimpanFormInput(){
+    if($$("forminputdata").validate()){
+        $$("inputdatapopup").disable();
+        $$("inputdatapopup").showProgress({
+            type:"icon",
+            hide:true
+        });
+        webix.ajax().post("/master_warehouse/input", $$("forminputdata").getValues()).then(function (response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+
+            let json = response.json();
+            if (!json.status){
+                webix.alert({
+                    type:"alert-error",
+                    text:json.msg
+                }).then(function(){
+                    location.reload();
+                });
+            }else if (!json.statusdata){
+                webix.alert({
+                    type:"alert-warning",
+                    text:json.msg
+                });
+            }else{
+                webix.alert({
+                    type:"alert-success",
+                    text:json.msg
+                });
+            }
+            buttonResetFormInput()
+            $$("inputdatapopup").hide();
+            $$("datatablewarehouse").clearAll();
+            response.json().data.forEach(function (datum) {
+                datum.edit = "<input class='edit' type='button' value=' Edit '>"
+                datum.hapus = "<input class='del' type='button' value=' Delete '>"
+                $$("datatablewarehouse").add(datum);
+            });
+            datawarehouse = response.json().data;
+        }).fail(function(response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+        });
+    }else {
+        webix.alert({ 
+            type:"alert-error", 
+            title:"Error",
+            text:"Mohon isi Data Terlebih Dahulu",
+        });
+    }
+}
+
+function buttonResetFormInput(){
+    $$("forminputdata").setValues({
+        inputwarehouseid: "",
+        inputwarehouseid: "",
+    });
+}
+
+function inputDataShow(){
+    $$("inputdatapopup").show()
+}
+
+function buttonSimpanFormEdit(){
+    if($$("formeditdata").validate()){
+        webix.confirm({
+        title:"Edit Data",
+        ok:"Ya", cancel:"Tidak",
+        text:"Apakah anda yakin ingin mengupdate data?"
+        }).then(function(){
+            $$("editdatapopup").disable();
+            $$("editdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+            webix.ajax().post("/master_warehouse/edit", $$("formeditdata").getValues()).then(function (response){
+                $$("editdatapopup").enable();
+                $$("editdatapopup").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+
+                let json = response.json();
+                if (!json.status){
+                    webix.alert({
+                        type:"alert-error",
+                        text:json.msg
+                    }).then(function(){
+                        location.reload();
+                    });
+                }else{
+                    webix.alert({
+                        type:"alert-success",
+                        text:json.msg
+                    });
+                }
+                $$("editdatapopup").hide();
+                $$("datatablewarehouse").clearAll();
+                response.json().data.forEach(function (datum) {
+                    datum.edit = "<input class='edit' type='button' value=' Edit '>"
+                    datum.hapus = "<input class='del' type='button' value=' Delete '>"
+                    $$("datatablewarehouse").add(datum);
+                });
+                datawarehouse = response.json().data;
+            }).fail(function(response){
+                $$("editdatapopup").enable();
+                $$("editdatapopup").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+            });
+        });
+    }else {
+        webix.alert({ 
+            type:"alert-error", 
+            title:"Error",
+            text:"Mohon isi Data Terlebih Dahulu",
+        });
+    }
+}
+
+function buttonEditDataShow(data){
+    $$("editwarehouseid").setValue(data.warehouseid);
+    $$("editwarehousename").setValue(data.warehousename);
+    $$("editdatapopup").show();
+};
+
+function buttonDeleteData(data){
+    webix.confirm({
+        itle:"Delete Data",
+        ok:"Ya", cancel:"Tidak",
+        text:"Apakah anda yakin menghapus data warehouse "+data.warehousename+" ?",
+        type: "confirm-error"
+        }).then(function(){
+            $$("contentpage").disable();
+            $$("contentpage").showProgress({
+                type:"icon",
+                hide:true
+            });
+            webix.ajax().post("/master_warehouse/delete", {warehouseid:data.warehouseid}).then(function (response){
+                $$("contentpage").enable();
+                $$("contentpage").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+
+                let json = response.json();
+                if (!json.status){
+                    webix.alert({
+                        type:"alert-error",
+                        text:json.msg
+                    }).then(function(){
+                        location.reload();
+                    });
+                }else if (!json.statusdata){
+                    webix.alert({
+                        type:"alert-warning",
+                        text:json.msg
+                    });
+                }else{
+                    webix.alert({
+                        type:"alert-success",
+                        text:json.msg
+                    });
+                }
+                $$("datatablewarehouse").clearAll();
+                response.json().data.forEach(function (datum) {
+                    datum.edit = "<input class='edit' type='button' value=' Edit '>"
+                    datum.hapus = "<input class='del' type='button' value=' Delete '>"
+                    $$("datatablewarehouse").add(datum);
+                });
+                datawarehouse = response.json().data;
+            }).fail(function(response){
+                $$("contentpage").enable();
+                $$("contentpage").showProgress({
+                    type:"icon",
+                    hide:true
+                });
+            });
+        });
+}
+
+datawarehouse.forEach(function (datum) {
+    console.log(datum)
+    datum.edit = "<input class='edit' type='button' value=' Edit '>"
+    datum.hapus = "<input class='del' type='button' value=' Delete '>"
+    $$("datatablewarehouse").add(datum);
+});
+
+
+{% endblock %}

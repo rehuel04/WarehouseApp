@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %} Sistem {% endblock %}
+
+{% block css %}
+.detail {
+    color: white;
+    height: 30px;
+    border-radius: 3px;
+    background-color: #1CA1C1;
+    font-size:11px!important;
+}
+.detail:hover{
+    transform:scale(1.2);
+    cursor:pointer;             
+}
+{% endblock %}
+
+{% block variabel %}
+
+
+let datapenerimaan = {{ data|tojson|safe }}
+let optiongudang = {{ dataGudang|tojson|safe }}
+let optionsuplier = {{ dataSuplier|tojson|safe }}
+
+
+
+let datapenerimaanView = {
+    id:"datatablepenerimaan",
+    view:"datatable", 
+    autoWidth:true,
+    scroll:"xy",
+    borderless:false,
+    height:400,
+    columns:[
+        { id: "penerimaanid", header:{ text:"ID", css:"datatablAlignCenter",}, fillspace:false, width:40, css:"datatablAlignCenter" },
+        { id: "nomortransaksipenerimaan", header:{ text:"Nomor Transaksi", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "gudangasalpenerimaan", header:{ text:"Gudang Asal", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "tgllpenerimaan", header:{ text:"Tgl Terima", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "suplierpenerimaan", header:{ text:"Nama Suplier", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "notepenerimaan", header:{ text:"Note", css:"datatablAlignCenter",}, fillspace:false, width:180, css:"datatablAlignCenter",fillspace:true },
+        { id: "detail", header: { text:"Detail", css:"datatablAlignCenter" }, width: 60, css:"datatablAlignCenter1"},
+    ],
+    onClick:{
+        detail: function (e, id, trg) {
+            let tb = $$("datatablepenerimaan").getItem(id);
+            webix.send("/tr_penerimaan_detail",{'nomortransaksi':tb.penerimaanid},"POST");
+        },
+    }
+};
+
+let masterpenerimaanButton = {
+    view:"toolbar",
+    borderless:true,
+    elements: [
+        {},
+        {},
+        {},
+        {
+            view:"button",
+            label:"Tambah Data",
+            width:115,
+            css:"webix_primary",
+            hover:"tambahData",
+            click:inputDataShow
+        },
+        {width:10},
+    ]
+}
+
+
+
+let formInputData = {
+    view:"form",
+    id:"forminputdata",
+    elements:[
+        { id: "inputnomorpenerimaan", label: "Nomor Transaksi", name: "inputnomorpenerimaan", view: "text", placeholder: "penerimaan ID", labelWidth: 130 },
+        { id: "inputgudang", label: "Gudang Asal", name: "inputgudang", view: "select", placeholder: "Kategori", labelWidth: 130, readonly: false, options:optiongudang},
+        { id: "inputsuplier", label: "Suplier", name: "inputsuplier", view: "select", placeholder: "Kategori", labelWidth: 130, readonly: false, options:optionsuplier},
+        { id: "inputpenerimaannote", label: "penerimaan Note", name: "inputpenerimaannote", view: "textarea", placeholder: "penerimaan Name (max 150 karakter)", labelWidth: 130, readonly: false,  attributes:{ maxlength:50 } },
+        {
+            margin: 5, cols: [
+                {},
+                { view: "button", id: "inputButton", value: "Simpan", css: "webix_primary",click:buttonSimpanFormInput },
+                {},
+            ]
+        },
+    ],
+    rules:{
+        // "inputnomorpenerimaan":webix.rules.isNotEmpty,
+        // "inputpenerimaannote":webix.rules.isNotEmpty,
+    }
+}
+
+webix.ui({
+    view:"window",
+    id:"inputdatapopup",
+    position:"center,middle",
+    maxWidth:500,
+    minWidth:300,
+    close:true,
+    modal:true,
+    move:true,
+    head:"Input Data Master penerimaan",
+    body:formInputData,
+});
+{% endblock %}
+
+{% block content %}
+
+{
+    view:"scrollview",
+    scroll:"auto",
+    id:"contentpage",
+    body:{
+        type:"space",
+        rows: [
+            {
+                borderless:true,
+                template: "<h3>Transaksi Penerimaan</h3><br>",
+                height: 60,
+            },
+            {
+                type:"clean",
+                rows:[
+                    {
+                        type:"form",
+                        borderless:true,
+                        rows:[
+                            {height:2},
+                            {cols:[{width:2},datapenerimaanView,{width:2}]},
+                            masterpenerimaanButton,
+                            {autoheight:true},
+                        ] 
+                    }
+                ]
+                
+            },
+            {height:15},
+        ]
+    }
+
+},
+
+
+{% endblock %}
+
+{% block variabelBottom %}
+webix.extend($$("inputdatapopup"), webix.ProgressBar);
+webix.extend($$("contentpage"), webix.ProgressBar);
+
+
+function buttonSimpanFormInput(){
+    if($$("forminputdata").validate()){
+        $$("inputdatapopup").disable();
+        $$("inputdatapopup").showProgress({
+            type:"icon",
+            hide:true
+        });
+        webix.ajax().post("/tr_penerimaan/input", $$("forminputdata").getValues()).then(function (response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+
+            let json = response.json();
+            if (!json.status){
+                webix.alert({
+                    type:"alert-error",
+                    text:json.msg
+                }).then(function(){
+                    location.reload();
+                });
+            }else if (!json.statusdata){
+                webix.alert({
+                    type:"alert-warning",
+                    text:json.msg
+                });
+            }else{
+                webix.alert({
+                    type:"alert-success",
+                    text:json.msg
+                });
+            }
+            buttonResetFormInput()
+            $$("inputdatapopup").hide();
+            $$("datatablepenerimaan").clearAll();
+            response.json().data.forEach(function (datum) {
+                datum.detail = "<input class='detail' type='button' value=' Detail '>"
+                $$("datatablepenerimaan").add(datum);
+            });
+            datapenerimaan = response.json().data;
+        }).fail(function(response){
+            $$("inputdatapopup").enable();
+            $$("inputdatapopup").showProgress({
+                type:"icon",
+                hide:true
+            });
+        });
+    }else {
+        webix.alert({ 
+            type:"alert-error", 
+            title:"Error",
+            text:"Mohon isi Data Terlebih Dahulu",
+        });
+    }
+}
+
+function buttonResetFormInput(){
+    $$("forminputdata").setValues({
+        inputpenerimaanid: "",
+        inputpenerimaanid: "",
+    });
+}
+
+function inputDataShow(){
+    $$("inputdatapopup").show()
+}
+
+
+datapenerimaan.forEach(function (datum) {
+    console.log(datum)
+    datum.detail = "<input class='detail' type='button' value=' Detail '>"
+    $$("datatablepenerimaan").add(datum);
+});
+
+
+{% endblock %}

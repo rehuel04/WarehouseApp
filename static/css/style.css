@@ -1,0 +1,160 @@
+.lov input[type=text]{
+    /* selector CSS lov digunakan untuk field 
+            view:text 
+    dirubah menjadi warna kuning */
+    background-color: #ffe972;
+}
+.lov input[type=text]:disabled{
+    /* selector CSS lov digunakan untuk field 
+            view:text 
+    dirubah menjadi warna kuning */
+    background-color: #ffe972;
+}
+.primary_key input[type=text] {
+    /* selector CSS primary_key digunakan untuk field 
+            view:text 
+    dirubah menjadi warna hijau */
+    background-color: lightgreen;
+}
+.primary_key input[type=text]:disabled {
+    /* selector CSS primary_key digunakan untuk field 
+            view:text 
+    dirubah menjadi warna hijau */
+    color:#313131;
+    background-color: lightgreen;
+}
+.readonly_disable input[type=text] {
+    /* selector CSS readonly_disable digunakan untuk field 
+            view:text 
+    dirubah menjadi warna abu-abu */
+    background-color: #E4E4E4;
+}
+.uppertext input[type=text]{
+    /* selector CSS uppertext digunakan untuk field 
+            view:text 
+    agar text yang diinputkan menjadi uppercase */
+    text-transform: uppercase;
+}
+.backgroudHeader {
+    background-color: #EC0928;
+    /* background-color: #ffffff; */
+    /* border-bottom: 5px solid #EC0928!important; */
+    border-bottom: 5px solid #ffd503!important;
+    color: #ffffff;
+    font-size: 20px;
+    padding: 10px;
+    text-align: left;
+}
+.white_color .webix_el_box,.white_color .webix_button, .white_color {
+    color: #ffffff!important;  
+}
+.webix_control.webix_el_label.white_color.pointer_cursor.title .webix_el_box{
+    font-size: 16px!important;
+}
+.white_color .webix_el_box,.white_color .webix_button, .white_color:hover{
+    cursor:pointer;            
+}
+.webix_icon.webix_sidebar_icon {
+    padding-left:7px!important;
+}
+/* .webix_icon_button .webix_icon{
+    color: #ffffff!important;
+}
+
+.webix_icon_button .webix_icon:hover{
+    color: #EC0928!important;
+} */
+
+.searchMode {
+    border-bottom: 5px solid #ffd503!important;
+}
+
+.addNewDataMode {
+    border-bottom: 5px solid #70BFD6!important;
+}
+
+.clearMode {
+    border-bottom: 0px;
+}
+
+.greenbox input[type=text] {
+    background-color: lightgreen;
+}
+
+.yellowbox input[type=text] {
+    background-color: #ffe972;
+}
+
+
+/*Spinner CSS*/
+.backgroundSpin {
+    -webkit-filter: grayscale(0.5) blur(10px);
+    /* Full height */
+    height: 100%;
+    /* Center and scale the image nicely */
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.spin::before {
+    animation: 1.5s linear infinite spinner;
+    animation-play-state: inherit;
+    border: solid 5px #cfd0d1;
+    border-bottom-color: #ED1C24;
+    border-radius: 50%;
+    content: "";
+    height: 40px;
+    width: 40px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate3d(-50%, -50%, 0);
+    will-change: transform;
+}
+
+@keyframes spinner {
+    0% {
+        transform: translate3d(-50%, -50%, 0) rotate(0deg);
+    }
+
+    25% {
+        transform: translate3d(-50%, -50%, 0) rotate(90);
+        border-bottom-color: #f5881c;
+    }
+
+    50% {
+        transform: translate3d(-50%, -50%, 0) rotate(180);
+        border-bottom-color: #f1983e;
+    }
+
+    75% {
+        transform: translate3d(-50%, -50%, 0) rotate(270);
+        border-bottom-color: #f5881c;
+    }
+
+    100% {
+        transform: translate3d(-50%, -50%, 0) rotate(360deg);
+        border-bottom-color: #f1983e;
+    }
+}
+
+.white_color_font {
+    color: white !important;
+}
+
+.disableCells {
+    background-color:#d6d6d6;
+}
+
+.primary_cell {
+    background-color: lightgreen;
+}
+
+.lov_cell{
+    background-color: #ffe972;
+}
+
+.datablock-focus {
+    border: 2px solid #00A19D !important;
+}

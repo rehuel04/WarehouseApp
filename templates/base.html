@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <!-- <meta name="viewport" content="width=device-width, initial-scale=1, min-width=500"/> -->
+    <title>{% block title %} {% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="static/webix/webix.css">
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/2.7.94/css/materialdesignicons.css" type="text/css"
+        charset="utf-8">
+    <!-- <script src="/static/webix/viewport-min-width.js" type="text/javascript"></script>     -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+    if ( screen.width < 450 ) {
+    var viewport = document.querySelector( "meta[name=viewport]" );
+    viewport.parentNode.removeChild( viewport );
+
+    var newViewport = document.createElement( "meta" );
+    newViewport.setAttribute( "name", "viewport" );
+    newViewport.setAttribute( "content", "width=500" );
+    document.head.appendChild( newViewport );
+    }
+    </script>
+    <script src="/static/webix/webix.js" type="text/javascript"></script>
+    <style>
+        .myhover{
+            /* background: #F0DCB6; */
+            background: rgb(255, 255, 134);
+        }
+        .myStyle {
+        text-align: center;
+        }
+        .backgroudHeader {
+            background-color: #000000;
+            border-bottom: 5px solid #57E3E2!important;
+            color: #ffffff;
+            font-size: 20px;
+            padding: 10px;
+            text-align: left;
+        }
+        .white_color .webix_el_box,.white_color .webix_button, .white_color {
+            color: white!important;  
+        }
+        .webix_control.webix_el_label.white_color.pointer_cursor.title .webix_el_box{
+            font-size: 16px!important;
+        }
+        .white_color .webix_el_box,.white_color .webix_button, .white_color:hover{
+            cursor:pointer;            
+        }
+
+        .webix_icon.webix_sidebar_icon {
+            padding-left:5px!important;
+        }
+        .pointer_cursor:hover{
+            cursor: pointer;
+        }
+        .removeBorder{
+            border:none!important;
+        }
+        .datatablAlignCenter{
+            text-align:center!important;
+        }
+        .del {
+            color: white;
+            height: 30px;
+            border-radius: 3px;
+            background-color: #ee6e73;
+            font-size:11px!important;
+        }
+        .del:hover{
+            transform:scale(1.2);
+            cursor:pointer;             
+        }
+        .edit {
+            color: white;
+            height: 30px;
+            border-radius: 3px;
+            background-color: #1CA1C1;
+            font-size:11px!important;
+        }
+        .edit:hover{
+            transform:scale(1.2);
+            cursor:pointer;             
+        }
+        .tambahData:hover{
+            transform:scale(1.2);
+            cursor:pointer;             
+        }
+
+    {% block css %}{% endblock %}
+    </style>
+
+</head>
+
+<body>
+    <script type="text/javascript" charset="utf-8">
+            function zoom() {
+                document.body.style.zoom = "90%" 
+            }
+            // untuk mencari besaran width dan height yang sesuai
+            function setWidthSizeByPercent(size){
+                let widthWindow = document.body.offsetWidth;
+                return (size / 100) * widthWindow
+            }
+            function setWidthSize(size, fullSize){
+                return setWidthSizeByPercent((size / fullSize) * 100)
+            }
+            function setHeightSizeByPercent(size){
+                let heightWindow = window.screen.height;
+                return (size / 100) * heightWindow
+            }
+            function setHeightSize(size, fullSize){
+                return setHeightSizeByPercent((size / fullSize) * 100)
+            }
+            
+            if (!webix.env.touch && webix.env.scrollSize) webix.CustomScroll.init();
+            // if (webix.env.mobile) webix.ui.fullScreen();
+            
+            {% block variabel %} {% endblock %}
+
+            let widthWindow = document.body.offsetWidth;
+            let heightWindow = window.screen.height;
+            let menu_data = [
+                {id: "menumasterdata", icon: "mdi mdi-database", value: "Master Data", data: [
+                        {id: "master_suplier", icon: "mdi mdi-rhombus-medium", value: "Master Suplier"},
+                        {id: "master_customer", icon: "mdi mdi-rhombus-medium", value: "Master Customer"},
+                        {id: "master_product", icon: "mdi mdi-rhombus-medium", value: "Master Product"},
+                        {id: "master_warehouse", icon: "mdi mdi-rhombus-medium", value: "Master Warehouse"}, 
+                    ]},
+                {id: "tr_penerimaan", icon: "mdi mdi-rhombus-medium", value: "Transaksi Penerimaan"},
+                {id: "tr_pengeluaran", icon: "mdi mdi-rhombus-medium", value: "Transaksi Pengeluaran"},
+                { id: "report", value: "Report", icon: "mdi mdi-rhombus-medium" }
+                ];
+            webix.ui({
+                type: "clean",
+                id:"layout",
+                rows: [
+                    {
+                        view: "toolbar",
+                        padding: 3,
+                        css: "backgroudHeader",
+                        height: 60,
+                        elements: [
+                            { view: "icon", icon: "mdi mdi-menu", click: togglesidebar, width:30 },                            
+                            { id:"textApp", view: "label", label: "<div style='font-size: 1.2em;'>Sistem Gudang</div>", css: "white_color"},
+                            {},
+                            {
+                                autowidth: true, view: "label", label: `User    &nbsp;&nbsp;&nbsp; <span class='webix_icon mdi mdi-logout'></span>`, css: "white_color pointer_cursor", align: "left", on: {
+                                    onItemClick: function () {
+                                        webix.send('/', 'GET')
+                                    }
+                                }
+                            },
+                            {
+                                width:25
+                            },
+                        ]
+                    },
+                    {
+                        cols: [
+                            {
+                                type: "clean",
+                                rows: [
+                                    {
+                                        view: "sidebar",
+                                        collapsedWidth:55,
+                                        data: menu_data,
+                                        multipleOpen: true,
+                                        scroll: "auto",
+                                        on: {
+                                            onAfterSelect: function (id) {
+                                                if(this.getItem(id).id == "master_suplier"){
+                                                    webix.send("/master_suplier",null, "GET");
+                                                }else if(this.getItem(id).id == "master_customer"){
+                                                    webix.send("/master_customer",null, "GET");
+                                                }else if(this.getItem(id).id == "master_product"){
+                                                    webix.send("/master_product",null, "GET");
+                                                }else if(this.getItem(id).id == "master_warehouse"){
+                                                    webix.send("/master_warehouse",null, "GET");
+                                                }else if(this.getItem(id).id == "tr_penerimaan"){
+                                                    webix.send("/tr_penerimaan",null, "GET");
+                                                }else if(this.getItem(id).id == "tr_pengeluaran"){
+                                                    webix.send("/tr_pengeluaran",null, "GET");
+                                                }else if(this.getItem(id).id == "report"){
+                                                    webix.send("/report",null, "GET");
+                                                }
+                                            },
+                                        }
+                                    },
+                                ]
+                            },
+                            {% block content %}{% endblock %}
+                        ]
+                    }
+                ]
+            });
+            function togglesidebar() {                
+                $$("$sidebar1").toggle();
+            }
+            {% block variabelBottom %} {% endblock %}
+        
+
+
+    </script>
+</body>
+
+</html>
