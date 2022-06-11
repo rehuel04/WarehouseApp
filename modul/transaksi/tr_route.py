@@ -5,6 +5,9 @@ import json
 appTransaksi = Blueprint('appTransaksi', __name__)
 app = Flask(__name__)
 
+@appTransaksi.route('/report', methods=['GET','POST'])
+def report():
+    return render_template('report.html')
 
 @appTransaksi.route('/tr_penerimaan', methods=['GET','POST'])
 def trPenerimaan():
